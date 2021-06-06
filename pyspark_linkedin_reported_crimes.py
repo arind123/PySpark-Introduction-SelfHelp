@@ -17,8 +17,10 @@ spark = SparkSession.builder.appName('Practise_1').getOrCreate()
 
 """**Fiter data after transforming the Date columns into timestamps** """
 
-rc_data = spark.read.csv('/content/drive/MyDrive/Colab Notebooks/PySpark/Reported_Crimes.csv', header = True).withColumn('Date',to_timestamp(col('Date'),'MM/dd/yyyy hh:mm:ss a')).withColumn('Updated On',to_timestamp(col('Updated On'),'MM/dd/yyyy hh:mm:ss a')).filter(col('Date') <= lit('2018-11-11'))
+rc_data = spark.read.csv('/content/drive/MyDrive/Colab Notebooks/PySpark/Reported_Crimes.csv', header = True).withColumn('Date',to_timestamp(col('Date'),'MM/dd/yyyy hh:mm:ss a')).withColumn('Updated On',to_timestamp(col('Updated On'),'MM/dd/yyyy hh:mm:ss a')).filter(col('Date') <= lit('2018-11-13'))
 rc_data.show(5)
+
+rc_data.orderBy('Date', ascending = False).show(5)
 
 """**Check the outcome**"""
 
@@ -41,7 +43,7 @@ StructType([
 ])
 
 ##Another more simpler way
-
+'''
 labels = [
   ('ID',StringType()),
   ('Case Number',StringType()),
@@ -66,14 +68,54 @@ labels = [
   ('Longitude',DoubleType()),
   ('Location',StringType())
 ]
+'''
 
+'''
 schema =  StructType([StructField(x[0],x[1],True) for x in labels])
 print(schema)
+'''
 
+'''
 rc_data = spark.read.csv('/content/drive/MyDrive/Colab Notebooks/PySpark/Reported_Crimes.csv', header = True,schema = schema).filter(col('Date') <= lit('2018-11-11'))
 rc_data.printSchema()
+'''
 
 """**PySpark is very fussy about this data types**"""
 
+'''
 rc_data.show() ### All of them become Null showing that some of the datatypes are not what we expected.
+'''
+
+"""**Working with columns**"""
+
+## Show first 5 for a particular column
+rc_data.select('ID','Case Number', 'Date').show(5)
+
+# To add or transform a column
+rc_data.withColumn('ID_new', 1+rc_data.ID).show(5)
+
+# To rename a column
+rc_data.withColumnRenamed('ID','ID_New').show(5)
+
+"""**Working with Rows**"""
+
+# To filter rows
+rc_data.filter(col('ID')=='10224738').show()
+
+# Get Unique columns
+rc_data.select('Primary Type').distinct().show()
+
+"""**Top 10 primary type of reported  crimes in descending order**"""
+
+rc_data.groupby('Primary Type').count().orderBy('count', ascending = False).show(10)
+
+"""**Challenge 1: What are the Top 3 locations of reported crimes?**"""
+
+rc_data.groupby('Location Description').count().orderBy('count', ascending = False).show(3)
+
+"""**Challange 2: Percentage of reported crimes that resulted in arrest**"""
+
+rc_data.select('Arrest').distinct().show()
+
+(rc_data.filter(col('Arrest')=='true').count()/rc_data.select('Arrest').count())*100
 
